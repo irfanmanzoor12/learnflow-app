@@ -84,6 +84,7 @@ curl -X POST http://localhost:8000/execute \
 
 | Service | Purpose | Port | Pattern |
 |---------|---------|------|---------|
+| **learnflow-frontend** | Next.js + Monaco editor student UI | 3000 | Next.js 14 Standalone |
 | **triage-agent** | Routes student queries to specialist agents | 8001 | FastAPI + Dapr |
 | **concepts-agent** | Explains Python concepts with curriculum KB | 8002 | FastAPI + Dapr |
 | **code-runner** | Executes Python code in sandbox (MCP server) | 8000 | MCP Code Execution |
@@ -146,16 +147,22 @@ learnflow-app/
 ├── .claude/skills/           # 7 reusable skills (Claude Code + Goose)
 ├── AGENTS.md                 # AI agent guidance
 ├── README.md
+├── frontend/                 # Next.js 14 + Monaco Editor
+│   ├── src/app/
+│   │   ├── page.tsx          # Dashboard with progress
+│   │   ├── chat/page.tsx     # AI tutor chat interface
+│   │   ├── code/page.tsx     # Monaco code editor + runner
+│   │   └── api/              # BFF routes (chat, run-code, progress)
+│   ├── package.json
+│   └── Dockerfile
 ├── services/
 │   ├── triage-agent/         # Query routing service
-│   │   ├── app/main.py
-│   │   ├── requirements.txt
-│   │   └── Dockerfile
 │   ├── concepts-agent/       # Python tutoring service
-│   │   ├── app/main.py
-│   │   ├── requirements.txt
-│   │   └── Dockerfile
 │   └── code-runner/          # Deployed via mcp-code-execution skill
+├── docs/                     # Docusaurus v3 documentation site
+│   ├── docs/                 # Markdown content (8 pages)
+│   ├── docusaurus.config.js
+│   └── Dockerfile
 ├── k8s/
 │   ├── namespace.yaml        # learnflow namespace (Dapr enabled)
 │   ├── dapr-components.yaml  # Kafka pubsub + PostgreSQL state store
@@ -169,11 +176,13 @@ learnflow-app/
 
 | Layer | Technology | Purpose |
 |-------|-----------|---------|
+| Frontend | Next.js 14 + Monaco Editor | Student UI with code editor |
 | Backend | FastAPI + Dapr | AI-powered tutoring agents |
 | Messaging | Kafka (Helm) | Event-driven communication |
 | Database | PostgreSQL (Helm) | User data, progress, conversations |
 | Service Mesh | Dapr | State management, pub/sub, service invocation |
 | Code Execution | MCP Server | Sandboxed Python execution |
+| Documentation | Docusaurus v3 | API docs + architecture guide |
 | Orchestration | Kubernetes (Minikube) | Container management |
 | Skills | Claude Code + Goose | Autonomous deployment via Skills |
 

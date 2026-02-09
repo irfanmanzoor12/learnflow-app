@@ -304,6 +304,76 @@ EOF
 echo "✓ code-runner deployed"
 echo ""
 
+# --- Frontend ---
+echo "--- Building learnflow-frontend ---"
+cd "$ROOT_DIR/frontend" && npm install --prefer-offline > /dev/null 2>&1 || npm install > /dev/null 2>&1
+docker build -t learnflow-frontend:latest "$ROOT_DIR/frontend" > /dev/null 2>&1
+minikube image load learnflow-frontend:latest > /dev/null 2>&1
+echo "✓ frontend image built"
+
+cat <<EOF | kubectl apply -f - > /dev/null
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: learnflow-frontend
+  namespace: learnflow
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: learnflow-frontend
+  template:
+    metadata:
+      labels:
+        app: learnflow-frontend
+    spec:
+      containers:
+      - name: frontend
+        image: learnflow-frontend:latest
+        imagePullPolicy: Never
+        ports:
+        - containerPort: 3000
+        env:
+        - name: TRIAGE_URL
+          value: "http://triage-agent.learnflow.svc.cluster.local"
+        - name: CODE_RUNNER_URL
+          value: "http://code-runner.learnflow.svc.cluster.local"
+        livenessProbe:
+          httpGet:
+            path: /api/health
+            port: 3000
+          initialDelaySeconds: 15
+          periodSeconds: 10
+        readinessProbe:
+          httpGet:
+            path: /api/ready
+            port: 3000
+          initialDelaySeconds: 10
+          periodSeconds: 5
+        resources:
+          requests:
+            memory: "128Mi"
+            cpu: "100m"
+          limits:
+            memory: "512Mi"
+            cpu: "500m"
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: learnflow-frontend
+  namespace: learnflow
+spec:
+  type: ClusterIP
+  selector:
+    app: learnflow-frontend
+  ports:
+  - port: 80
+    targetPort: 3000
+EOF
+echo "✓ frontend deployed"
+echo ""
+
 # ──────────────────────────────────────────────
 # Phase 5: Wait for all deployments
 # ──────────────────────────────────────────────
@@ -312,6 +382,7 @@ echo "=== Phase 5: Waiting for all services ==="
 kubectl wait --for=condition=available deployment/triage-agent -n learnflow --timeout=300s > /dev/null 2>&1 && echo "✓ triage-agent ready" || echo "✗ triage-agent timeout"
 kubectl wait --for=condition=available deployment/concepts-agent -n learnflow --timeout=300s > /dev/null 2>&1 && echo "✓ concepts-agent ready" || echo "✗ concepts-agent timeout"
 kubectl wait --for=condition=available deployment/code-runner -n learnflow --timeout=300s > /dev/null 2>&1 && echo "✓ code-runner ready" || echo "✗ code-runner timeout"
+kubectl wait --for=condition=available deployment/learnflow-frontend -n learnflow --timeout=300s > /dev/null 2>&1 && echo "✓ frontend ready" || echo "✗ frontend timeout"
 
 echo ""
 
@@ -323,13 +394,18 @@ echo "  ✓ LearnFlow Deployment Complete"
 echo "============================================"
 echo ""
 echo "Services:"
+echo "  frontend:       learnflow-frontend.learnflow.svc.cluster.local:80"
 echo "  triage-agent:   triage-agent.learnflow.svc.cluster.local:80"
 echo "  concepts-agent: concepts-agent.learnflow.svc.cluster.local:80"
 echo "  code-runner:    code-runner.learnflow.svc.cluster.local:80"
 echo "  kafka:          kafka.kafka.svc.cluster.local:9092"
 echo "  postgresql:     postgres-postgresql.postgres.svc.cluster.local:5432"
 echo ""
-echo "Test with:"
+echo "Access frontend:"
+echo "  kubectl port-forward -n learnflow svc/learnflow-frontend 3000:80"
+echo "  Open http://localhost:3000"
+echo ""
+echo "Test API directly:"
 echo "  kubectl port-forward -n learnflow svc/triage-agent 8001:80"
 echo "  curl -X POST http://localhost:8001/chat -H 'Content-Type: application/json' -d '{\"message\":\"explain for loops\"}'"
 echo ""
