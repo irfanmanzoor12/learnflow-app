@@ -82,8 +82,10 @@ echo "✓ Dapr components created (kafka-pubsub, postgres-statestore)"
 
 # Create postgres credentials secret in learnflow namespace
 POSTGRES_PASSWORD=$(kubectl get secret -n postgres postgres-postgresql -o jsonpath="{.data.postgres-password}" 2>/dev/null | base64 --decode 2>/dev/null || echo "postgres")
+PG_CONN_STRING="host=postgres-postgresql.postgres.svc.cluster.local user=postgres password=${POSTGRES_PASSWORD} port=5432 database=learnflow sslmode=disable"
 kubectl create secret generic postgres-credentials \
   --from-literal=password="${POSTGRES_PASSWORD}" \
+  --from-literal=connection-string="${PG_CONN_STRING}" \
   --namespace=learnflow \
   --dry-run=client -o yaml | kubectl apply -f - > /dev/null
 echo "✓ Postgres credentials secret created"

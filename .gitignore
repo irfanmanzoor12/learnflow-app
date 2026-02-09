@@ -1,0 +1,33 @@
+# Dependencies
+node_modules/
+.venv/
+__pycache__/
+*.pyc
+
+# Build outputs
+.next/
+dist/
+build/
+*.egg-info/
+
+# Environment & secrets
+.env
+.env.*
+*.key
+*.pem
+*.p12
+.git-credentials
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+.DS_Store
+
+# Logs
+*.log
+npm-debug.log*
+
+# K8s local
+kubeconfig

@@ -26,7 +26,9 @@ spec:
   version: v1
   metadata:
   - name: connectionString
-    value: "host=postgres-postgresql.postgres.svc.cluster.local user=postgres password=postgres port=5432 database=learnflow sslmode=disable"
+    secretKeyRef:
+      name: postgres-credentials
+      key: connection-string
   - name: tableName
     value: "dapr_state"
   - name: keyLength
